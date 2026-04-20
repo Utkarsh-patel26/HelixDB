@@ -49,7 +49,7 @@
 
 ## What This Project Is
 
-JavaDB is a from-scratch implementation of a relational database management system (RDBMS) written entirely in Java. It is not a wrapper around SQLite, H2, or any other embedded database. Every component — from byte-level page I/O all the way up to SQL string parsing — is hand-written.
+HelixDB is a from-scratch implementation of a relational database management system (RDBMS) written entirely in Java. It is not a wrapper around SQLite, H2, or any other embedded database. Every component — from byte-level page I/O all the way up to SQL string parsing — is hand-written.
 
 The engine supports a meaningful subset of SQL: `CREATE TABLE`, `DROP TABLE`, `INSERT`, `SELECT` (with `WHERE`, `ORDER BY`, `LIMIT`, `JOIN`), `UPDATE`, and `DELETE`. It stores data in a custom binary file format on disk, indexes columns using a B+ Tree, executes queries using a volcano-model operator pipeline, and guarantees ACID properties using a Write-Ahead Log and Two-Phase Locking.
 
@@ -90,7 +90,7 @@ Most developers use databases every day without understanding what happens betwe
 - How does a database prevent two concurrent transactions from corrupting the same row?
 - Why does `SELECT COUNT(*) FROM users` take longer on a cold database than a warm one?
 
-Building JavaDB does not just teach you how databases work. It teaches you how to reason about systems that must be both correct under concurrency and durable under failure — two of the hardest constraints in software engineering.
+Building HelixDB does not just teach you how databases work. It teaches you how to reason about systems that must be both correct under concurrency and durable under failure — two of the hardest constraints in software engineering.
 
 ---
 
@@ -142,11 +142,11 @@ Building JavaDB does not just teach you how databases work. It teaches you how t
 ## Project Structure
 
 ```
-javadb/
+HelixDB/
 ├── src/
 │   └── main/
 │       └── java/
-│           └── javadb/
+│           └── HelixDB/
 │               ├── client/
 │               │   ├── Connection.java
 │               │   ├── Statement.java
@@ -229,7 +229,7 @@ javadb/
 │
 └── test/
     └── java/
-        └── javadb/
+        └── HelixDB/
             ├── parser/ParserTest.java
             ├── storage/BTreeTest.java
             ├── storage/BufferPoolTest.java
@@ -587,7 +587,7 @@ Request: X-lock    WAIT         WAIT
 - **Growing phase**: a transaction may acquire locks but may not release any.
 - **Shrinking phase**: a transaction may release locks but may not acquire new ones.
 
-In **strict 2PL** (which JavaDB uses), the shrinking phase only begins at transaction end — all locks are held until `COMMIT` or `ROLLBACK`. This is stricter than basic 2PL but prevents cascading aborts.
+In **strict 2PL** (which HelixDB uses), the shrinking phase only begins at transaction end — all locks are held until `COMMIT` or `ROLLBACK`. This is stricter than basic 2PL but prevents cascading aborts.
 
 **Lock granularity**: Locks are acquired at the **tuple level** (by `RecordId`). This gives fine-grained concurrency — two transactions updating different rows in the same table do not block each other.
 
@@ -623,7 +623,7 @@ After UNDO completes, write ABORT records for each rolled-back transaction to cl
 
 ## Data Types
 
-JavaDB supports four native data types:
+HelixDB supports four native data types:
 
 | Type | Java mapping | Storage | Notes |
 |---|---|---|---|
@@ -691,7 +691,7 @@ ROLLBACK;
 
 ## Concurrency Model
 
-JavaDB uses Java threads to simulate concurrent clients. Each `Connection` runs in its own thread and holds its own `Transaction` object. Thread-safety is maintained at the following boundaries:
+HelixDB uses Java threads to simulate concurrent clients. Each `Connection` runs in its own thread and holds its own `Transaction` object. Thread-safety is maintained at the following boundaries:
 
 - **Buffer Pool**: `synchronized` methods on `fetchPage`, `markDirty`, and `evict`. Pin counts use `AtomicInteger`.
 - **LockManager**: A `ReentrantLock` guards each `LockTable` entry. Waiting threads call `Condition.await()` and are woken by `Condition.signalAll()` when a lock is released.
@@ -718,7 +718,7 @@ The WAL file is a sequential binary file. Log records are written in append orde
 
 ## Zero External Dependencies — Design Philosophy
 
-JavaDB uses only the Java standard library. There are no Maven or Gradle dependencies beyond the JDK itself. No Guava, no Apache Commons, no Netty, no logging frameworks.
+HelixDB uses only the Java standard library. There are no Maven or Gradle dependencies beyond the JDK itself. No Guava, no Apache Commons, no Netty, no logging frameworks.
 
 This is a deliberate constraint that forces every data structure and algorithm to be written from scratch. The B+ Tree is not from a library. The SQL parser is not from ANTLR. The serialization is not from Protobuf. The lock manager is built on raw `java.util.concurrent` primitives.
 
@@ -762,4 +762,4 @@ Working through this codebase — reading it, modifying it, breaking it, and fix
 
 ---
 
-*JavaDB is an educational implementation. It is correct, complete, and covers every concept present in production-grade relational databases — but it is not optimised for production use.*
+*HelixDB is an educational implementation. It is correct, complete, and covers every concept present in production-grade relational databases — but it is not optimised for production use.*
