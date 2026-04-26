@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  javadb:
+    build: .
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DB_PATH=/data/javadb
